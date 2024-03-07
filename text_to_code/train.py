@@ -10,7 +10,9 @@ import torch.optim as optim
 
 # Replace 'dataset-name' with the name of the dataset you're interested in
 train_loader = load_dataset("iamtarun/python_code_instructions_18k_alpaca")
-train_dataset = train_loader["train"]
+# Select the first 1000 rows of the training set
+train_dataset = train_loader["train"].select(range(1000))
+
 
 print(train_dataset[0])
 
@@ -27,6 +29,7 @@ tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 # This is optional and depends on your specific requirements
 tokenizer.add_special_tokens({"pad_token": "[PAD]", "eos_token": "[EOS]"})
 
+
 ntokens = tokenizer.vocab_size  # size of vocabulary
 emsize = 768  # embedding dimension
 nhid = 768  # the dimension of the feedforward network model in nn.TransformerEncoder
@@ -40,7 +43,7 @@ model = TextToCodeTransformer(ntokens, emsize, nhead, nhid, nlayers, dropout)
 # Define loss function and optimizer
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
-
+device = torch.device("cpu")
 # Assuming `train_loader` is your DataLoader instance
 # Assuming you have a batch of input_ids of shape [batch_size, seq_length]
 for epoch in range(10):
@@ -48,9 +51,14 @@ for epoch in range(10):
     total_loss = 0.0
     for i, batch in enumerate(train_dataloader):
         inputs, targets = batch['input_ids'], batch['labels']
+        # Example: Concatenating input tensors along the first dimension (batch dimension)
+        concatenated_inputs = torch.cat(inputs,
+                                        dim=0)  # Adjust 'dim' as needed for your model
+        concatenated_outputs = torch.cat(targets,
+                                        dim=0)
 
         optimizer.zero_grad()
-        outputs = model(inputs)  # inputs are now guaranteed to be tensors
+        outputs = model(concatenated_inputs)  # inputs are now guaranteed to be tensors
         loss = criterion(outputs.view(-1, ntokens), targets.view(-1))
         loss.backward()
         optimizer.step()
