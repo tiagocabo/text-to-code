@@ -1,3 +1,4 @@
+import torch
 from datasets import load_dataset
 from torch import nn
 from torch.utils.data import DataLoader
@@ -41,21 +42,19 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
 
 # Assuming `train_loader` is your DataLoader instance
-for epoch in range(10):  # loop over the dataset multiple times
+# Assuming you have a batch of input_ids of shape [batch_size, seq_length]
+for epoch in range(10):
     model.train()
     total_loss = 0.0
-    for i, data in enumerate(train_loader, 0):
-        inputs, targets = data["input_ids"], data["labels"]
-        optimizer.zero_grad()
+    for i, batch in enumerate(train_dataloader):
+        inputs, targets = batch['input_ids'], batch['labels']
 
-        # Forward pass
-        outputs = model(inputs)
+        optimizer.zero_grad()
+        outputs = model(inputs)  # inputs are now guaranteed to be tensors
         loss = criterion(outputs.view(-1, ntokens), targets.view(-1))
         loss.backward()
         optimizer.step()
 
         total_loss += loss.item()
 
-    print(f"Epoch {epoch}, Loss: {total_loss / len(train_loader)}")
 
-print("Finished Training")
